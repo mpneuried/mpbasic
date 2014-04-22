@@ -1,335 +1,333 @@
+module.exports = ( config )->
+	# import the external modules
+	_ = require('lodash')._
+	extend = require('extend')
+	colors = require('colors')
 
-# import the external modules
-_ = require('lodash')._
-extend = require('extend')
-colors = require('colors')
+	# # Basic Module
+	# ### extends [EventEmitter]
+	# Basic module to handle errors and initialize modules
+	return class Basic extends require('events').EventEmitter
+		# ## internals
+		
+		# setting if errors are handled as rest errors. Then the error values are an array `"error-key":[ httpStatusCode, errorDetailMessage ]`
+		isRest: false
+		
+		# make the deep extend availible for all modles
+		extend: extend
 
-config = require('./config')
+		# **defaults** *Function* basic object to hold config defaults. Will be overwritten by the constructor options
+		defaults: =>
+			return {}
 
-# # Basic Module
-# ### extends [EventEmitter]
-# Basic module to handle errors and initialize modules
-module.exports = class Basic extends require('events').EventEmitter
-	# ## internals
-	
-	# setting if errors are handled as rest errors. Then the error values are an array `"error-key":[ httpStatusCode, errorDetailMessage ]`
-	isRest: false
-	
-	# make the deep extend availible for all modles
-	extend: extend
+		###	
+		## constructor 
 
-	# **defaults** *Function* basic object to hold config defaults. Will be overwritten by the constructor options
-	defaults: =>
-		return {}
+		`new Baisc( options )`
+		
+		Basic constructor. Define the configuration by options and defaults, init logging and init the error handler
 
-	###	
-	## constructor 
+		@param {Object} options Basic config object
 
-	`new Baisc( options )`
-	
-	Basic constructor. Define the configuration by options and defaults, init logging and init the error handler
+		###
+		constructor: ( options = {} )->
+			@on "_log", @_log
 
-	@param {Object} options Basic config object
+			@getter "classname", ->
+				return @constructor.name.toLowerCase()
 
-	###
-	constructor: ( options = {} )->
-		@on "_log", @_log
+			@config = extend( true, {}, @defaults(), config.get( @classname, true ), options )
 
-		@getter "classname", ->
-			return @constructor.name.toLowerCase()
+			# init errors
+			@_initErrors()
 
-		@config = extend( true, {}, @defaults(), config.get( @classname, true ), options )
-
-		# init errors
-		@_initErrors()
-
-		@initialize()
+			@initialize()
 
 
-		@debug "loaded"
-		return
+			@debug "loaded"
+			return
 
-	# method to include other class methods to this class.
-	# useage:
-	# class Foo
-	#   bar: ->
-	#     console.log( 42 )
-	#     return @
-	# 
-	# class Lorem
-	#   constructor: ->
-	#	@mixin( Foo )
-	#	return
-	#   run: -> return 23
-	#   
-	# new Lorem().bar().run() # -> log: 42 ; return 23
-	
-	mixin: (mixins...)=>
-		if mixins?.length
-			for mxn in mixins
-				for _fnname, fn of mxn.prototype when _fnname isnt "constructor"
-					@[ _fnname ] = fn
-		return
+		# method to include other class methods to this class.
+		# useage:
+		# class Foo
+		#   bar: ->
+		#     console.log( 42 )
+		#     return @
+		# 
+		# class Lorem
+		#   constructor: ->
+		#	@mixin( Foo )
+		#	return
+		#   run: -> return 23
+		#   
+		# new Lorem().bar().run() # -> log: 42 ; return 23
+		
+		mixin: (mixins...)=>
+			if mixins?.length
+				for mxn in mixins
+					for _fnname, fn of mxn.prototype when _fnname isnt "constructor"
+						@[ _fnname ] = fn
+			return
 
-	###
-	## initialize
-	
-	`basic.initialize()`
-	
-	Overwritible Method to initialize the module
-	
-	@api public
-	###
-	initialize: =>
-		return
+		###
+		## initialize
+		
+		`basic.initialize()`
+		
+		Overwritible Method to initialize the module
+		
+		@api public
+		###
+		initialize: =>
+			return
 
-	###
-	## define
-	
-	`basic.define( prop, fnGet [, fnSet] )`
-	
-	Helper to define getter and setter methods fot a property
-	
-	@param { String } prop Property name 
-	@param { Function|Object } fnGet Get method or a object with `get` and `set` 
-	@param { Function } [fnSet] Set method
+		###
+		## define
+		
+		`basic.define( prop, fnGet [, fnSet] )`
+		
+		Helper to define getter and setter methods fot a property
+		
+		@param { String } prop Property name 
+		@param { Function|Object } fnGet Get method or a object with `get` and `set` 
+		@param { Function } [fnSet] Set method
 
-	@api public
-	###
-	define: ( prop, fnGet, fnSet, writable = true, enumerable = true )=>
-		_oGetSet = 
-			enumerable: enumerable
-			writable: writable
-
-		if _.isFunction( fnGet )
-			# set the `defineProperty` object
+		@api public
+		###
+		define: ( prop, fnGet, fnSet, writable = true, enumerable = true )=>
 			_oGetSet = 
-				get: fnGet
-			_oGetSet.set = fnSet if fnSet? and _.isFunction( fnSet )
-		else
-			_oGetSet.value = fnGet
-		
-		# define by object
-		Object.defineProperty @, prop, _oGetSet
-		return
+				enumerable: enumerable
+				writable: writable
 
-	###
-	## getter
-	
-	`basic.getter( prop, fnGet )`
-	
-	Shortcut to define a getter
-	
-	@param { String } prop Property name 
-	@param { Function } fnGet Get method 
-	
-	@api public
-	###
-	getter: ( prop, _get, enumerable = true )=>
-		_obj = 
-			enumerable: enumerable
-			#writable: false
-
-		if _.isFunction( _get )
-			_obj.get = _get
-		else
-			_obj.value = _get
-		Object.defineProperty @, prop, _obj
-		return
-
-	###
-	## setter
-	
-	`basic.setter( prop, fnSet )`
-	
-	Shortcut to define a setter
-	
-	@param { String } prop Property name 
-	@param { Function } fnSet Get method 
-	
-	@api public
-	###
-	setter: ( prop, fnGet, enumerable = true )=>
-		Object.defineProperty @, prop, set: fnGet, enumerable: enumerable, writable: true
-		return	
-
-	# handle a error
-	###
-	## _handleError
-	
-	`basic._handleError( cb, err [, data] )`
-	
-	Baisc error handler. It creates a true error object and returns it to the callback, logs it or throws the error hard
-	
-	@param { Function|String } cb Callback function or NAme to send it to the logger as error 
-	@param { String|Error|Object } err Error type, Obejct or real error object
-	
-	@api private
-	###
-	_handleError: ( cb, err, data = {}, errExnd )=>
-		# try to create a error Object with humanized message
-		if _.isString( err )
-			_err = new Error()
-			_err.name = err
-			if @isRest
-				_err.message = @_ERRORS?[ err ][ 1 ]?( data ) or "unkown"
+			if _.isFunction( fnGet )
+				# set the `defineProperty` object
+				_oGetSet = 
+					get: fnGet
+				_oGetSet.set = fnSet if fnSet? and _.isFunction( fnSet )
 			else
-				_err.message = @_ERRORS?[ err ]?( data ) or "unkown"
-			_err.customError = true
-		else 
-			_err = err
+				_oGetSet.value = fnGet
+			
+			# define by object
+			Object.defineProperty @, prop, _oGetSet
+			return
 
-		if errExnd?
-			_err.data = errExnd
-
-		for _k, _v of data 
-			_err[ _k ] = _v
-
-		if _.isFunction( cb )
-			#@log "error", "", _err
-			cb( _err )
-		else if _.isString( cb )
-			@log "error", cb, _err
-		else
-			throw _err
-		return _err
-
-	###
-	## log
-	
-	`base.log( severity, code [, content1, content2, ... ] )`
-	
-	write a log to the console if the current severity matches the message severity
-	
-	@param { String } severity Message severity
-	@param { String } code Simple code the describe/label the output
-	@param { Any } [contentN] Content to append to the log
-	
-	@api public
-	###
-	log: ( severity, code, content... )=>
-		args = [ "_log", severity, code ]
-		@emit.apply( @, args.concat( content ) ) 
-		return
-
-	###
-	## _log
-	
-	`base._log( severity, code [, content1, content2, ... ] )`
-	
-	write a log to the console if the current severity matches the message severity
-	
-	@param { String } severity Message severity
-	@param { String } code Simple code the describe/label the output
-	@param { Any } [contentN] Content to append to the log
-	
-	@api private
-	###
-	_log: ( severity, code, content... )=>
-		# get the severity and throw a log event
+		###
+		## getter
 		
-		if @_checkLogging( severity )
-			_tmpl = "%s %s - #{ new Date().toString()[4..23]} - %s "
+		`basic.getter( prop, fnGet )`
+		
+		Shortcut to define a getter
+		
+		@param { String } prop Property name 
+		@param { Function } fnGet Get method 
+		
+		@api public
+		###
+		getter: ( prop, _get, enumerable = true )=>
+			_obj = 
+				enumerable: enumerable
+				#writable: false
 
-			args = [ _tmpl, severity.toUpperCase(), @_logname(), code ]
+			if _.isFunction( _get )
+				_obj.get = _get
+			else
+				_obj.value = _get
+			Object.defineProperty @, prop, _obj
+			return
 
-			if content.length
-				args[ 0 ] += "\n"
-				for _c in content
-					args.push _c
+		###
+		## setter
+		
+		`basic.setter( prop, fnSet )`
+		
+		Shortcut to define a setter
+		
+		@param { String } prop Property name 
+		@param { Function } fnSet Get method 
+		
+		@api public
+		###
+		setter: ( prop, fnGet, enumerable = true )=>
+			Object.defineProperty @, prop, set: fnGet, enumerable: enumerable, writable: true
+			return	
 
-			switch severity
-				when "fatal"
-					args[ 0 ] = args[ 0 ].red.bold.inverse
-					console.error.apply( console, args )
-					console.trace()
-				when "error"
-					args[ 0 ] = args[ 0 ].red.bold
-					console.error.apply( console, args )
-				when "warning"
-					args[ 0 ] = args[ 0 ].yellow.bold
-					console.warn.apply( console, args )
-				when "info"
-					args[ 0 ] = args[ 0 ].blue.bold
-					console.info.apply( console, args )
-				when "debug"
-					args[ 0 ] = args[ 0 ].green.bold
-					console.log.apply( console, args )
+		# handle a error
+		###
+		## _handleError
+		
+		`basic._handleError( cb, err [, data] )`
+		
+		Baisc error handler. It creates a true error object and returns it to the callback, logs it or throws the error hard
+		
+		@param { Function|String } cb Callback function or NAme to send it to the logger as error 
+		@param { String|Error|Object } err Error type, Obejct or real error object
+		
+		@api private
+		###
+		_handleError: ( cb, err, data = {}, errExnd )=>
+			# try to create a error Object with humanized message
+			if _.isString( err )
+				_err = new Error()
+				_err.name = err
+				if @isRest
+					_err.message = @_ERRORS?[ err ][ 1 ]?( data ) or "unkown"
 				else
-	
-		return
+					_err.message = @_ERRORS?[ err ]?( data ) or "unkown"
+				_err.customError = true
+			else 
+				_err = err
 
-	_logname: =>
-		return @constructor.name
+			if errExnd?
+				_err.data = errExnd
 
-	fatal: ( code, content... )=>
-		args = [ "_log", "fatal", code ]
-		@emit.apply( @, args.concat( content ) ) 
-		return
+			for _k, _v of data 
+				_err[ _k ] = _v
 
-	error: ( code, content... )=>
-		args = [ "_log", "error", code ]
-		@emit.apply( @, args.concat( content ) ) 
-		return
-
-	warning: ( code, content... )=>
-		args = ["_log",  "warning", code ]
-		@emit.apply( @, args.concat( content ) ) 
-		return
-
-	info: ( code, content... )=>
-		args = [ "_log", "info", code ]
-		@emit.apply( @, args.concat( content ) ) 
-		return
-
-	debug: ( code, content... )=>
-		args = [ "_log", "debug", code ]
-		@emit.apply( @, args.concat( content ) ) 
-		return
-
-	###
-	## _checkLogging
-	
-	`basic._checkLogging( severity )`
-	
-	Helper to check if a log will be written to the console
-	
-	@param { String } severity Message severity
-	
-	@return { Boolean } Flag if the severity is allowed to write to the console
-	
-	@api private
-	###
-	_checkLogging: ( severity )=>
-		if not @_logging_iseverity?
-			@_logging_iseverity = @config.logging.severitys.indexOf( @config.logging.severity )
-
-		iServ = @config.logging.severitys.indexOf( severity )
-		if @config.logging.severity? and iServ <= @_logging_iseverity
-			true
-		else
-			false
-
-	###
-	## _initErrors
-	
-	`basic._initErrors(  )`
-	
-	convert error messages to underscore templates
-	
-	@api private
-	###
-	_initErrors: =>
-		@_ERRORS = @ERRORS()
-		for key, msg of @_ERRORS
-			if @isRest
-				if not _.isFunction( msg[ 1 ] )
-					@_ERRORS[ key ][ 1 ] = _.template( msg[ 1 ] )
+			if _.isFunction( cb )
+				#@log "error", "", _err
+				cb( _err )
+			else if _.isString( cb )
+				@log "error", cb, _err
 			else
-				if not _.isFunction( msg )
-					@_ERRORS[ key ] = _.template( msg )
-		return
+				throw _err
+			return _err
 
-	# error message mapping
-	ERRORS: =>
-		"ENOTIMPLEMENTED": "This function is planed but currently not implemented"
+		###
+		## log
+		
+		`base.log( severity, code [, content1, content2, ... ] )`
+		
+		write a log to the console if the current severity matches the message severity
+		
+		@param { String } severity Message severity
+		@param { String } code Simple code the describe/label the output
+		@param { Any } [contentN] Content to append to the log
+		
+		@api public
+		###
+		log: ( severity, code, content... )=>
+			args = [ "_log", severity, code ]
+			@emit.apply( @, args.concat( content ) ) 
+			return
+
+		###
+		## _log
+		
+		`base._log( severity, code [, content1, content2, ... ] )`
+		
+		write a log to the console if the current severity matches the message severity
+		
+		@param { String } severity Message severity
+		@param { String } code Simple code the describe/label the output
+		@param { Any } [contentN] Content to append to the log
+		
+		@api private
+		###
+		_log: ( severity, code, content... )=>
+			# get the severity and throw a log event
+			
+			if @_checkLogging( severity )
+				_tmpl = "%s %s - #{ new Date().toString()[4..23]} - %s "
+
+				args = [ _tmpl, severity.toUpperCase(), @_logname(), code ]
+
+				if content.length
+					args[ 0 ] += "\n"
+					for _c in content
+						args.push _c
+
+				switch severity
+					when "fatal"
+						args[ 0 ] = args[ 0 ].red.bold.inverse
+						console.error.apply( console, args )
+						console.trace()
+					when "error"
+						args[ 0 ] = args[ 0 ].red.bold
+						console.error.apply( console, args )
+					when "warning"
+						args[ 0 ] = args[ 0 ].yellow.bold
+						console.warn.apply( console, args )
+					when "info"
+						args[ 0 ] = args[ 0 ].blue.bold
+						console.info.apply( console, args )
+					when "debug"
+						args[ 0 ] = args[ 0 ].green.bold
+						console.log.apply( console, args )
+					else
+		
+			return
+
+		_logname: =>
+			return @constructor.name
+
+		fatal: ( code, content... )=>
+			args = [ "_log", "fatal", code ]
+			@emit.apply( @, args.concat( content ) ) 
+			return
+
+		error: ( code, content... )=>
+			args = [ "_log", "error", code ]
+			@emit.apply( @, args.concat( content ) ) 
+			return
+
+		warning: ( code, content... )=>
+			args = ["_log",  "warning", code ]
+			@emit.apply( @, args.concat( content ) ) 
+			return
+
+		info: ( code, content... )=>
+			args = [ "_log", "info", code ]
+			@emit.apply( @, args.concat( content ) ) 
+			return
+
+		debug: ( code, content... )=>
+			args = [ "_log", "debug", code ]
+			@emit.apply( @, args.concat( content ) ) 
+			return
+
+		###
+		## _checkLogging
+		
+		`basic._checkLogging( severity )`
+		
+		Helper to check if a log will be written to the console
+		
+		@param { String } severity Message severity
+		
+		@return { Boolean } Flag if the severity is allowed to write to the console
+		
+		@api private
+		###
+		_checkLogging: ( severity )=>
+			if not @_logging_iseverity?
+				@_logging_iseverity = @config.logging.severitys.indexOf( @config.logging.severity )
+
+			iServ = @config.logging.severitys.indexOf( severity )
+			if @config.logging.severity? and iServ <= @_logging_iseverity
+				true
+			else
+				false
+
+		###
+		## _initErrors
+		
+		`basic._initErrors(  )`
+		
+		convert error messages to underscore templates
+		
+		@api private
+		###
+		_initErrors: =>
+			@_ERRORS = @ERRORS()
+			for key, msg of @_ERRORS
+				if @isRest
+					if not _.isFunction( msg[ 1 ] )
+						@_ERRORS[ key ][ 1 ] = _.template( msg[ 1 ] )
+				else
+					if not _.isFunction( msg )
+						@_ERRORS[ key ] = _.template( msg )
+			return
+
+		# error message mapping
+		ERRORS: =>
+			"ENOTIMPLEMENTED": "This function is planed but currently not implemented"
