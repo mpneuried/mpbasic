@@ -10,9 +10,6 @@ module.exports = ( config )->
 	return class Basic extends require('events').EventEmitter
 		# ## internals
 		
-		# setting if errors are handled as rest errors. Then the error values are an array `"error-key":[ httpStatusCode, errorDetailMessage ]`
-		isRest: false
-		
 		# make the deep extend availible for all modles
 		extend: extend
 
@@ -151,6 +148,17 @@ module.exports = ( config )->
 			Object.defineProperty @, prop, set: fnGet, enumerable: enumerable, writable: true
 			return	
 
+		_waitUntil: ( method, key = "ready", context = @ )=>
+			return =>
+				args = arguments
+				if context[ key ]
+					method.apply( @, args )
+				else
+					context.once key, =>
+						method.apply( @, args )
+						return
+				return
+
 		# handle a error
 		###
 		## _handleError
@@ -169,10 +177,8 @@ module.exports = ( config )->
 			if _.isString( err )
 				_err = new Error()
 				_err.name = err
-				if @isRest
-					_err.message = @_ERRORS?[ err ][ 1 ]?( data ) or "unkown"
-				else
-					_err.message = @_ERRORS?[ err ]?( data ) or "unkown"
+				_err.message = @_ERRORS?[ err ][ 1 ]?( data ) or "unkown"
+				_err.statusCode = @_ERRORS?[ err ][ 0 ] or 500
 				_err.customError = true
 			else 
 				_err = err
@@ -320,14 +326,11 @@ module.exports = ( config )->
 		_initErrors: =>
 			@_ERRORS = @ERRORS()
 			for key, msg of @_ERRORS
-				if @isRest
-					if not _.isFunction( msg[ 1 ] )
-						@_ERRORS[ key ][ 1 ] = _.template( msg[ 1 ] )
-				else
-					if not _.isFunction( msg )
-						@_ERRORS[ key ] = _.template( msg )
+				if not _.isFunction( msg[ 1 ] )
+					@_ERRORS[ key ][ 1 ] = _.template( msg[ 1 ] )
+		
 			return
 
 		# error message mapping
 		ERRORS: =>
-			"ENOTIMPLEMENTED": "This function is planed but currently not implemented"
+			"ENOTIMPLEMENTED": [ 501, "This function is planed but currently not implemented" ]
