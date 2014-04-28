@@ -46,6 +46,7 @@
         this._log = __bind(this._log, this);
         this.log = __bind(this.log, this);
         this._handleError = __bind(this._handleError, this);
+        this._waitUntil = __bind(this._waitUntil, this);
         this.setter = __bind(this.setter, this);
         this.getter = __bind(this.getter, this);
         this.define = __bind(this.define, this);
@@ -188,6 +189,27 @@
         });
       };
 
+      Basic.prototype._waitUntil = function(method, key, context) {
+        var _this = this;
+        if (key == null) {
+          key = "ready";
+        }
+        if (context == null) {
+          context = this;
+        }
+        return function() {
+          var args;
+          args = arguments;
+          if (context[key]) {
+            method.apply(_this, args);
+          } else {
+            context.once(key, function() {
+              method.apply(_this, args);
+            });
+          }
+        };
+      };
+
       /*
       		## _handleError
       		
@@ -227,6 +249,8 @@
           cb(_err);
         } else if (_.isString(cb)) {
           this.log("error", cb, _err);
+        } else if (cb === true) {
+          return _err;
         } else {
           throw _err;
         }
