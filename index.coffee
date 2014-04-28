@@ -194,7 +194,9 @@ module.exports = ( config )->
 				cb( _err )
 			else if _.isString( cb )
 				@log "error", cb, _err
-			else
+			else if cb is true
+				return _err
+			else	
 				throw _err
 			return _err
 
