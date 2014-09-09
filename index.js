@@ -57,7 +57,7 @@
         this.getter("classname", function() {
           return this.constructor.name.toLowerCase();
         });
-        this.config = extend(true, {}, this.defaults(), config.get(this.classname, true), options);
+        this.config = extend(true, {}, this.defaults(), config.get(this._config_name || this.classname, true), options);
         this._initErrors();
         this.initialize();
         this.debug("loaded");

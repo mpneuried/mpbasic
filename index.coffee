@@ -33,7 +33,7 @@ module.exports = ( config )->
 			@getter "classname", ->
 				return @constructor.name.toLowerCase()
 
-			@config = extend( true, {}, @defaults(), config.get( @classname, true ), options )
+			@config = extend( true, {}, @defaults(), config.get( @_config_name or @classname, true ), options )
 
 			# init errors
 			@_initErrors()
