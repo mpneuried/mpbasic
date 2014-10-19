@@ -248,6 +248,9 @@ module.exports = ( config )->
 					when "fatal"
 						args[ 0 ] = args[ 0 ].red.bold.inverse
 						console.error.apply( console, args )
+						for arg in args when arg instanceof Error
+							console.log arg.stack
+							return
 						console.trace()
 					when "error"
 						args[ 0 ] = args[ 0 ].red.bold
