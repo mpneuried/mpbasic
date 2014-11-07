@@ -1,9 +1,28 @@
-module.exports = ( config )->
-	# import the external modules
-	_ = require('lodash')._
-	extend = require('extend')
-	colors = require('colors')
+# # MPBasic
+# ### extends [EventEmitter](http://nodejs.org/api/events.html)
+#
+# ### Exports: *Function*
+#
+# This is a general basic class. It inculdes some methods that are often usefull.
+# It integrates logging, error handling getter/setter, ...
+# 
+# **Example:**
+# 	
+# 	Config = require( "./path/to/config/module" );
+# 	class FooClass extends require( "mpbasic" )( Config )
+#		initialize: =>
+#			@debug "init"
+#	
+#	new FooClass() // -> DEBUG FooClass - Nov 07 2014 15:42:14 - init
+# 
 
+# **npm modules**
+_ = require('lodash')._
+extend = require('extend')
+colors = require('colors')
+
+module.exports = ( config )->
+	
 	# # Basic Module
 	# ### extends [EventEmitter]
 	# Basic module to handle errors and initialize modules
@@ -40,25 +59,39 @@ module.exports = ( config )->
 
 			@initialize()
 
-
 			@debug "loaded"
 			return
 
-		# method to include other class methods to this class.
-		# useage:
-		# class Foo
-		#   bar: ->
-		#     console.log( 42 )
-		#     return @
 		# 
-		# class Lorem
-		#   constructor: ->
-		#	@mixin( Foo )
-		#	return
-		#   run: -> return 23
-		#   
-		# new Lorem().bar().run() # -> log: 42 ; return 23
+		# useage:
 		
+		
+		###
+		## mixin
+		
+		`mpbasic.mixin( mixins... )`
+		
+		Method to include other class methods to this class.		
+
+		@param { Class } mixins... One or more classes as arguments 
+		
+		@api public
+		###
+		# **Example:**
+		# 
+		# 	class Foo
+		# 		bar: ->
+		# 		console.log( 42 )
+		# 		return @
+		#
+		# 	class Lorem extends require( "mpbasic" )()
+		# 		constructor: ->
+		# 			@mixin( Foo )
+		# 		return
+		# 			run: -> return 23
+		#	
+		# 	new Lorem().bar().run() # -> log: 42 ; return 23
+		#
 		mixin: (mixins...)=>
 			if mixins?.length
 				for mxn in mixins
@@ -148,6 +181,20 @@ module.exports = ( config )->
 			Object.defineProperty @, prop, set: fnGet, enumerable: enumerable, writable: true
 			return	
 
+		###
+		## _waitUntil
+		
+		`basic._waitUntil( method[, key][, context] )`
+		
+		Wrapper method to create a methos thas is only called until the `@{key}`is true or an event `{key}` has bin emitted.
+		Usually this is used to generate a method that will wait until the modules/class is ready.
+		
+		@param { Function } method The function to call.
+		@param { String } [ key="ready" ] the key to listen for.
+		@param { Context } [context={self}] The context to lsiten to the key. Per default it is the instance it self `@` or `this`.
+		
+		@api public
+		###
 		_waitUntil: ( method, key = "ready", context = @ )=>
 			return =>
 				args = arguments
@@ -268,29 +315,103 @@ module.exports = ( config )->
 		
 			return
 
+		###
+		## _logname
+		
+		`basic._logname()`
+		
+		Helper method to overwrite the name displayed withing the console output
+		
+		@param { String }  Desc 
+		@param { Function }  Callback function 
+		
+		@return { String } Return Desc 
+		
+		@api private
+		###
 		_logname: =>
 			return @constructor.name
 
+		###
+		## fatal
+		
+		`index.fatal( code, content... )`
+		
+		Shorthand to output a **fatal** log
+		
+		@param { String } code Simple code the describe/label the output
+		@param { Any } [contentN] Content to append to the log
+		
+		@api public
+		###
 		fatal: ( code, content... )=>
 			args = [ "_log", "fatal", code ]
 			@emit.apply( @, args.concat( content ) ) 
 			return
 
+		###
+		## error
+		
+		`index.error( code, content... )`
+		
+		Shorthand to output a **error** log
+		
+		@param { String } code Simple code the describe/label the output
+		@param { Any } [contentN] Content to append to the log
+		
+		@api public
+		###
 		error: ( code, content... )=>
 			args = [ "_log", "error", code ]
 			@emit.apply( @, args.concat( content ) ) 
 			return
 
+		###
+		## warning
+		
+		`index.warning( code, content... )`
+		
+		Shorthand to output a **warning** log
+		
+		@param { String } code Simple code the describe/label the output
+		@param { Any } [contentN] Content to append to the log
+		
+		@api public
+		###
 		warning: ( code, content... )=>
 			args = ["_log",  "warning", code ]
 			@emit.apply( @, args.concat( content ) ) 
 			return
 
+		###
+		## info
+		
+		`index.info( code, content... )`
+		
+		Shorthand to output a **info** log
+		
+		@param { String } code Simple code the describe/label the output
+		@param { Any } [contentN] Content to append to the log
+		
+		@api public
+		###
 		info: ( code, content... )=>
 			args = [ "_log", "info", code ]
 			@emit.apply( @, args.concat( content ) ) 
 			return
 
+		###
+		## debug
+		
+		`index.debug( code, content... )`
+		
+		Shorthand to output a **debug** log
+		
+		@param { String } code Simple code the describe/label the output
+		@param { Any } [contentN] Content to append to the log
+		
+		@api public
+		###
 		debug: ( code, content... )=>
 			args = [ "_log", "debug", code ]
 			@emit.apply( @, args.concat( content ) ) 
@@ -336,6 +457,16 @@ module.exports = ( config )->
 		
 			return
 
-		# error message mapping
+		###
+		## ERRORS
+		
+		`passwordless.ERRORS()`
+		
+		Error detail mappings
+		
+		@return { Object } Return A Object of error details. Format: `"ERRORCODE":[ ststudCode, "Error detail" ]` 
+		
+		@api private
+		###
 		ERRORS: =>
 			"ENOTIMPLEMENTED": [ 501, "This function is planed but currently not implemented" ]
