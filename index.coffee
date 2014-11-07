@@ -57,7 +57,7 @@ module.exports = ( config )->
 			# init errors
 			@_initErrors()
 
-			@initialize()
+			@initialize( options )
 
 			@debug "loaded"
 			return
@@ -105,10 +105,12 @@ module.exports = ( config )->
 		`basic.initialize()`
 		
 		Overwritible Method to initialize the module
+
+		@param {Object} options Basic config object passed to constructor
 		
 		@api public
 		###
-		initialize: =>
+		initialize: ( options )=>
 			return
 
 		###

@@ -59,7 +59,7 @@
         });
         this.config = extend(true, {}, this.defaults(), config.get(this._config_name || this.classname, true), options);
         this._initErrors();
-        this.initialize();
+        this.initialize(options);
         this.debug("loaded");
         return;
       }
@@ -88,11 +88,13 @@
       		`basic.initialize()`
       		
       		Overwritible Method to initialize the module
+      
+      		@param {Object} options Basic config object passed to constructor
       		
       		@api public
        */
 
-      Basic.prototype.initialize = function() {};
+      Basic.prototype.initialize = function(options) {};
 
 
       /*
