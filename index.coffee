@@ -21,7 +21,22 @@ _ = require('lodash')._
 extend = require('extend')
 colors = require('colors')
 
-module.exports = ( config )->
+# define a fallback if no config object has been passed.
+fallbackCnf = 
+	get: ( name, logging = false )->
+
+		_cnf = {}
+		if logging
+
+			logging = 
+				logging:
+					severity: process.env[ "severity_#{name}"] or @severity
+					severitys: "fatal,error,warning,info,debug".split( "," )
+			return extend( true, {}, logging, _cnf )
+		else
+			return _cnf
+
+module.exports = ( config = fallbackCnf )->
 	
 	# # Basic Module
 	# ### extends [EventEmitter]
