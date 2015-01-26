@@ -30,7 +30,7 @@ fallbackCnf =
 
 			logging = 
 				logging:
-					severity: process.env[ "severity_#{name}"] or @severity
+					severity: process.env[ "severity" ] or process.env[ "severity_#{name}"] or @severity
 					severitys: "fatal,error,warning,info,debug".split( "," )
 			return extend( true, {}, logging, _cnf )
 		else
