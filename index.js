@@ -22,7 +22,7 @@
       if (logging) {
         logging = {
           logging: {
-            severity: process.env["severity_" + name] || this.severity,
+            severity: process.env["severity"] || process.env["severity_" + name] || this.severity,
             severitys: "fatal,error,warning,info,debug".split(",")
           }
         };
