@@ -2,7 +2,7 @@
   "author": "mp, <mp@tcs.de> (www.tcs.de)",
   "name": "mpbasic",
   "description": "Basic class",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "homepage": "https://github.com/mpneuried/mpbasic",
   "private": false,
   "main": "/index.js",
@@ -16,7 +16,7 @@
   "dependencies": {
     "extend": "2.0.x",
     "colors": "1.0.x",
-    "lodash": "2.4.x"
+    "lodash": "3.x"
   },
   "devDependencies": {}
 }
