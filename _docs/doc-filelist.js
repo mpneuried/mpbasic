@@ -1,1 +1,1 @@
-var tree={"files":["index.coffee"]};
+var tree={"files":["config.coffee","index.coffee"]};
