@@ -1,7 +1,7 @@
 # # MPBasic
 # ### extends [EventEmitter](http://nodejs.org/api/events.html)
 #
-# ### Exports: *Function*
+# ### Exports: *Constructor*
 #
 # This is a general basic class. It inculdes some methods that are often usefull.
 # It integrates logging, error handling getter/setter, ...
@@ -17,26 +17,18 @@
 # 
 
 # **npm modules**
-_ = require('lodash')._
+_isFunction = require( "lodash/isFunction" )
+_isString = require( "lodash/isString" )
+_template = require( "lodash/template" )
+
 extend = require('extend')
 colors = require('colors')
 
-# define a fallback if no config object has been passed.
-fallbackCnf = 
-	get: ( name, logging = false )->
-
-		_cnf = {}
-		if logging
-
-			logging = 
-				logging:
-					severity: process.env[ "severity" ] or process.env[ "severity_#{name}"] or @severity
-					severitys: "fatal,error,warning,info,debug".split( "," )
-			return extend( true, {}, logging, _cnf )
-		else
-			return _cnf
-
-module.exports = ( config = fallbackCnf )->
+module.exports = ( config )->
+	
+	if not config?
+		# [Default config](./config.coffee.html)
+		config = require( "./config" )
 	
 	# # Basic Module
 	# ### extends [EventEmitter]
@@ -125,7 +117,7 @@ module.exports = ( config = fallbackCnf )->
 		
 		@api public
 		###
-		initialize: ( options )=>
+		initialize: ( options )->
 			return
 
 		###
@@ -142,15 +134,15 @@ module.exports = ( config = fallbackCnf )->
 		@api public
 		###
 		define: ( prop, fnGet, fnSet, writable = true, enumerable = true )=>
-			_oGetSet = 
+			_oGetSet =
 				enumerable: enumerable
 				writable: writable
 
-			if _.isFunction( fnGet )
+			if _isFunction( fnGet )
 				# set the `defineProperty` object
-				_oGetSet = 
+				_oGetSet =
 					get: fnGet
-				_oGetSet.set = fnSet if fnSet? and _.isFunction( fnSet )
+				_oGetSet.set = fnSet if fnSet? and _isFunction( fnSet )
 			else
 				_oGetSet.value = fnGet
 			
@@ -171,11 +163,11 @@ module.exports = ( config = fallbackCnf )->
 		@api public
 		###
 		getter: ( prop, _get, enumerable = true )=>
-			_obj = 
+			_obj =
 				enumerable: enumerable
 				#writable: false
 
-			if _.isFunction( _get )
+			if _isFunction( _get )
 				_obj.get = _get
 			else
 				_obj.value = _get
@@ -196,7 +188,7 @@ module.exports = ( config = fallbackCnf )->
 		###
 		setter: ( prop, fnGet, enumerable = true )=>
 			Object.defineProperty @, prop, set: fnGet, enumerable: enumerable, writable: true
-			return	
+			return
 
 		###
 		## _waitUntil
@@ -238,29 +230,29 @@ module.exports = ( config = fallbackCnf )->
 		###
 		_handleError: ( cb, err, data = {}, errExnd )=>
 			# try to create a error Object with humanized message
-			if _.isString( err )
+			if _isString( err )
 				_err = new Error()
 				_err.name = err
 				_err.message = @_ERRORS?[ err ][ 1 ]?( data ) or "unkown"
 				_err.statusCode = @_ERRORS?[ err ][ 0 ] or 500
 				_err.customError = true
-			else 
+			else
 				_err = err
 
 			if errExnd?
 				_err.data = errExnd
 
-			for _k, _v of data 
+			for _k, _v of data
 				_err[ _k ] = _v
 
-			if _.isFunction( cb )
+			if _isFunction( cb )
 				#@log "error", "", _err
 				cb( _err )
-			else if _.isString( cb )
+			else if _isString( cb )
 				@log "error", cb, _err
 			else if cb is true
 				return _err
-			else	
+			else
 				throw _err
 			return _err
 
@@ -279,7 +271,7 @@ module.exports = ( config = fallbackCnf )->
 		###
 		log: ( severity, code, content... )=>
 			args = [ "_log", severity, code ]
-			@emit.apply( @, args.concat( content ) ) 
+			@emit.apply( @, args.concat( content ) )
 			return
 
 		###
@@ -363,7 +355,7 @@ module.exports = ( config = fallbackCnf )->
 		###
 		fatal: ( code, content... )=>
 			args = [ "_log", "fatal", code ]
-			@emit.apply( @, args.concat( content ) ) 
+			@emit.apply( @, args.concat( content ) )
 			return
 
 		###
@@ -380,7 +372,7 @@ module.exports = ( config = fallbackCnf )->
 		###
 		error: ( code, content... )=>
 			args = [ "_log", "error", code ]
-			@emit.apply( @, args.concat( content ) ) 
+			@emit.apply( @, args.concat( content ) )
 			return
 
 		###
@@ -397,7 +389,7 @@ module.exports = ( config = fallbackCnf )->
 		###
 		warning: ( code, content... )=>
 			args = ["_log",  "warning", code ]
-			@emit.apply( @, args.concat( content ) ) 
+			@emit.apply( @, args.concat( content ) )
 			return
 
 		###
@@ -414,7 +406,7 @@ module.exports = ( config = fallbackCnf )->
 		###
 		info: ( code, content... )=>
 			args = [ "_log", "info", code ]
-			@emit.apply( @, args.concat( content ) ) 
+			@emit.apply( @, args.concat( content ) )
 			return
 
 		###
@@ -431,7 +423,7 @@ module.exports = ( config = fallbackCnf )->
 		###
 		debug: ( code, content... )=>
 			args = [ "_log", "debug", code ]
-			@emit.apply( @, args.concat( content ) ) 
+			@emit.apply( @, args.concat( content ) )
 			return
 
 		###
@@ -469,8 +461,8 @@ module.exports = ( config = fallbackCnf )->
 		_initErrors: =>
 			@_ERRORS = @ERRORS()
 			for key, msg of @_ERRORS
-				if not _.isFunction( msg[ 1 ] )
-					@_ERRORS[ key ][ 1 ] = _.template( msg[ 1 ] )
+				if not _isFunction( msg[ 1 ] )
+					@_ERRORS[ key ][ 1 ] = _template( msg[ 1 ] )
 		
 			return
 
