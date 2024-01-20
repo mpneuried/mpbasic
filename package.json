@@ -5,7 +5,7 @@
   "version": "0.0.18",
   "homepage": "https://github.com/mpneuried/mpbasic",
   "private": false,
-  "main": "/index.js",
+  "main": "./index.js",
   "repository": {
     "type": "git",
     "url": "git://github.com/mpneuried/mpbasic.git"
